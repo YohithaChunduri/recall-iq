@@ -10,7 +10,7 @@ import {
 import { useRevision } from '../../context/RevisionContext';
 
 export const ProgressHistoryView: React.FC = () => {
-  const { attempts, misconceptions, topics, overallMastery, metacognitiveStats } = useRevision();
+  const { attempts, misconceptions, topics, overallMastery, metacognitiveStats, subjectConfig } = useRevision();
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
 
   const filteredAttempts = attempts.filter((att) => {
@@ -25,14 +25,14 @@ export const ProgressHistoryView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold text-[11px] rounded-full uppercase tracking-wider">
-              Metacognitive Progress & Analytics
+              {subjectConfig.name} Progress & Analytics
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
             Revision Progress & History
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Detailed log of all diagnostic questions, targeted re-tests, and calibration accuracy across DSA topics.
+            Detailed log of diagnostic questions, targeted re-tests, and calibration accuracy for <strong>{subjectConfig.name}</strong>.
           </p>
         </div>
 
@@ -103,7 +103,7 @@ export const ProgressHistoryView: React.FC = () => {
             <span className="text-xs text-slate-500 font-medium">Speed vs passive reading</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            By focusing exclusively on what you don't know rather than re-reading known basic Array notes, you save ~65% of cram time.
+            By focusing exclusively on what you don't know rather than re-reading already mastered topics in {subjectConfig.name}, you save ~65% of cram time.
           </p>
         </div>
       </div>
@@ -156,7 +156,7 @@ export const ProgressHistoryView: React.FC = () => {
         <div className="space-y-3 pt-2">
           {filteredAttempts.length === 0 ? (
             <div className="py-8 text-center text-slate-400 text-xs">
-              No attempts matching the selected filter.
+              No attempts logged yet for {subjectConfig.name}. Take the diagnostic quiz to populate your history!
             </div>
           ) : (
             filteredAttempts.map((attempt) => {
@@ -180,7 +180,7 @@ export const ProgressHistoryView: React.FC = () => {
                           {matchedConcept?.title || 'Concept Attempt'}
                         </span>
                         <span className="text-slate-400">•</span>
-                        <span className="text-slate-500">{matchedTopic?.name}</span>
+                        <span className="text-slate-500">{matchedTopic?.name || subjectConfig.name}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         Selected Option {String.fromCharCode(65 + attempt.selectedOptionIndex)} • Confidence:{' '}

@@ -14,13 +14,19 @@ import {
   Link,
   GitFork,
   Hash,
-  Grid
+  Grid,
+  Database,
+  RefreshCw,
+  Code,
+  Cpu,
+  HardDrive,
+  Globe
 } from 'lucide-react';
 import { useRevision } from '../../context/RevisionContext';
 import type { Concept, Topic } from '../../types';
 
 export const KnowledgeMapView: React.FC = () => {
-  const { topics, misconceptions, openDebunkModal, openRetestModal, openRevisionModal } = useRevision();
+  const { topics, misconceptions, openDebunkModal, openRetestModal, openRevisionModal, subjectConfig } = useRevision();
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
 
@@ -35,16 +41,23 @@ export const KnowledgeMapView: React.FC = () => {
 
   const getTopicIcon = (name: string) => {
     const lower = name.toLowerCase();
-    if (lower.includes('binary search')) return <Search className="w-5 h-5" />;
+    if (lower.includes('binary search') || lower.includes('search')) return <Search className="w-5 h-5" />;
     if (lower.includes('graph')) return <Network className="w-5 h-5" />;
     if (lower.includes('sliding window')) return <Sliders className="w-5 h-5" />;
     if (lower.includes('tree')) return <GitBranch className="w-5 h-5" />;
     if (lower.includes('sort')) return <ArrowUpDown className="w-5 h-5" />;
     if (lower.includes('stack') || lower.includes('queue')) return <Layers className="w-5 h-5" />;
-    if (lower.includes('linked list')) return <Link className="w-5 h-5" />;
+    if (lower.includes('linked list') || lower.includes('list')) return <Link className="w-5 h-5" />;
     if (lower.includes('pointer')) return <GitFork className="w-5 h-5" />;
     if (lower.includes('hash')) return <Hash className="w-5 h-5" />;
-    return <Grid className="w-5 h-5" />;
+    if (lower.includes('array')) return <Grid className="w-5 h-5" />;
+    if (lower.includes('norm') || lower.includes('database') || lower.includes('dbms')) return <Database className="w-5 h-5" />;
+    if (lower.includes('trans') || lower.includes('concurr') || lower.includes('recover')) return <RefreshCw className="w-5 h-5" />;
+    if (lower.includes('sql') || lower.includes('query')) return <Code className="w-5 h-5" />;
+    if (lower.includes('sync') || lower.includes('cpu') || lower.includes('schedul')) return <Cpu className="w-5 h-5" />;
+    if (lower.includes('memory') || lower.includes('page') || lower.includes('disk')) return <HardDrive className="w-5 h-5" />;
+    if (lower.includes('network') || lower.includes('transport') || lower.includes('tcp') || lower.includes('ip')) return <Globe className="w-5 h-5" />;
+    return <BookOpen className="w-5 h-5" />;
   };
 
   return (
@@ -54,7 +67,7 @@ export const KnowledgeMapView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold text-[11px] rounded-full uppercase tracking-wider">
-              Metacognitive Concept Map
+              {subjectConfig.name} Knowledge Graph
             </span>
             <span className="text-slate-400 text-xs">•</span>
             <span className="text-xs font-semibold text-slate-600">
@@ -65,7 +78,7 @@ export const KnowledgeMapView: React.FC = () => {
             Knowledge & Blindspot Map
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Click any concept node to inspect active misconceptions, recurrence rates, and launch targeted re-tests.
+            Click any concept node to inspect active misconceptions, recurrence rates, and launch targeted re-tests for <strong>{subjectConfig.name}</strong>.
           </p>
         </div>
 
@@ -242,7 +255,7 @@ export const KnowledgeMapView: React.FC = () => {
                 <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 space-y-1">
                   <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-[11px] uppercase tracking-wider">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Golden Algorithmic Rule</span>
+                    <span>Golden Invariant Rule</span>
                   </div>
                   <p className="text-xs text-emerald-950 font-medium leading-relaxed">
                     {selectedConcept.keyRule}

@@ -18,7 +18,14 @@ import {
   Link,
   GitFork,
   Hash,
-  Grid
+  Grid,
+  Database,
+  RefreshCw,
+  Code,
+  Cpu,
+  HardDrive,
+  Globe,
+  BookOpen
 } from 'lucide-react';
 import { useRevision } from '../../context/RevisionContext';
 import type { ActivePage } from '../layout/Navbar';
@@ -29,6 +36,7 @@ interface DashboardViewProps {
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const {
+    currentUser,
     subjectConfig,
     topics,
     misconceptions,
@@ -43,48 +51,63 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
   const unresolvedMisconceptions = misconceptions.filter((m) => !m.isResolved);
 
+  // Group topics by mastery tiers
+  const strongTopics = topics.filter((t) => t.masteryPercentage >= 75);
+  const moderateTopics = topics.filter((t) => t.masteryPercentage >= 50 && t.masteryPercentage < 75);
+  const weakTopics = topics.filter((t) => t.masteryPercentage < 50);
+
+  // Reusable dynamic topic icon resolver
   const getTopicIcon = (name: string) => {
     const lower = name.toLowerCase();
-    if (lower.includes('binary search')) return <Search className="w-5 h-5" />;
+    if (lower.includes('binary search') || lower.includes('search')) return <Search className="w-5 h-5" />;
     if (lower.includes('graph')) return <Network className="w-5 h-5" />;
     if (lower.includes('sliding window')) return <Sliders className="w-5 h-5" />;
     if (lower.includes('tree')) return <GitBranch className="w-5 h-5" />;
     if (lower.includes('sort')) return <ArrowUpDown className="w-5 h-5" />;
     if (lower.includes('stack') || lower.includes('queue')) return <Layers className="w-5 h-5" />;
-    if (lower.includes('linked list')) return <Link className="w-5 h-5" />;
+    if (lower.includes('linked list') || lower.includes('list')) return <Link className="w-5 h-5" />;
     if (lower.includes('pointer')) return <GitFork className="w-5 h-5" />;
     if (lower.includes('hash')) return <Hash className="w-5 h-5" />;
-    return <Grid className="w-5 h-5" />;
+    if (lower.includes('array')) return <Grid className="w-5 h-5" />;
+    if (lower.includes('norm') || lower.includes('database') || lower.includes('dbms')) return <Database className="w-5 h-5" />;
+    if (lower.includes('trans') || lower.includes('concurr') || lower.includes('recover')) return <RefreshCw className="w-5 h-5" />;
+    if (lower.includes('sql') || lower.includes('query')) return <Code className="w-5 h-5" />;
+    if (lower.includes('sync') || lower.includes('cpu') || lower.includes('schedul')) return <Cpu className="w-5 h-5" />;
+    if (lower.includes('memory') || lower.includes('page') || lower.includes('disk')) return <HardDrive className="w-5 h-5" />;
+    if (lower.includes('network') || lower.includes('transport') || lower.includes('tcp') || lower.includes('ip')) return <Globe className="w-5 h-5" />;
+    return <BookOpen className="w-5 h-5" />;
   };
 
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
-      {/* Top Welcome & Scenario Context */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+      {/* Top Welcome & Personalized Subject Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold text-[11px] rounded-full uppercase tracking-wider">
-              Adaptive Revision Session
+            <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 font-extrabold text-[11px] rounded-full uppercase tracking-wider">
+              Hey, {currentUser?.name || 'Student'} 👋
             </span>
             <span className="text-slate-400 text-xs">•</span>
             <span className="text-xs font-semibold text-slate-600">
               Exam in {subjectConfig.hoursUntilExam} Hours ({subjectConfig.examDateText})
             </span>
           </div>
+
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-            {subjectConfig.name}
+            Your {subjectConfig.name} Revision Dashboard
           </h1>
+
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            AI has analyzed your diagnostic answers and prioritized high-yield algorithmic patterns for your remaining study time.
+            AI tracks your confidence vs. correctness across <strong>{topics.length} topics</strong> to eliminate blindspots before your exam.
           </p>
         </div>
 
         {/* Study Time Allocation Adjuster */}
-        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 p-3 rounded-xl">
+        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 p-3 rounded-2xl flex-shrink-0">
           <Clock className="w-5 h-5 text-indigo-600 flex-shrink-0" />
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Revision Time Budget
+              Study Time Budget
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <select
@@ -93,7 +116,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-900 focus:outline-indigo-600"
               >
                 <option value={60}>1 Hour (Quick Cram)</option>
-                <option value={120}>2 Hours (Recommended Demo)</option>
+                <option value={120}>2 Hours (Recommended)</option>
                 <option value={180}>3 Hours (Deep Review)</option>
                 <option value={240}>4 Hours (Full Mastery)</option>
               </select>
@@ -176,22 +199,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Time Remaining */}
+        {/* Topic Health Overview */}
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-bold uppercase tracking-wider">Revision Budget</span>
-            <Clock className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-bold uppercase tracking-wider">Topic Health</span>
+            <Sparkles className="w-4 h-4 text-amber-500" />
           </div>
           <div className="my-2">
-            <div className="text-2xl sm:text-3xl font-black text-slate-900">
-              {subjectConfig.totalAvailableMinutes}m
+            <div className="flex items-center gap-2 text-sm font-black">
+              <span className="text-rose-600">{weakTopics.length} Weak</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-amber-600">{moderateTopics.length} Review</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-emerald-600">{strongTopics.length} Solid</span>
             </div>
             <p className="text-[11px] text-slate-500 mt-1">
-              Smart time distribution
+              Across {topics.length} syllabus modules
             </p>
           </div>
-          <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-            <span className="text-emerald-600 font-bold">100%</span> scheduled across topics
+          <div className="text-[11px] text-slate-500 font-medium">
+            Time Budget: <strong className="text-slate-700">{subjectConfig.totalAvailableMinutes} mins</strong>
           </div>
         </div>
       </div>
@@ -199,7 +226,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       {/* Hero "Revise Now" AI Recommendation Card */}
       {nextRecommended && (
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden">
-          {/* Subtle background glow */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
@@ -207,7 +233,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/20 border border-rose-500/30 text-rose-300 font-extrabold text-xs rounded-full uppercase tracking-wider">
                   <Flame className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
-                  AI REVISE NOW • HIGHEST YIELD
+                  RECOMMENDED FOR TODAY • REVISE NOW
                 </span>
                 <span className="text-indigo-300 text-xs font-semibold">
                   ⏱️ {nextRecommended.allocatedMinutes} mins allocated
@@ -219,7 +245,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                {nextRecommended.reason}
+                <strong>Reason:</strong> {nextRecommended.reason}
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -328,7 +354,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           <div className="flex items-center justify-between">
             <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-indigo-600" />
-              <span>DSA Topics & Mastery Breakdown</span>
+              <span>{subjectConfig.name} Topics & Mastery Breakdown</span>
             </h3>
             <button
               onClick={() => onNavigate('revision-plan')}
@@ -536,7 +562,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2"
               >
                 <HelpCircle className="w-4 h-4 text-indigo-600" />
-                <span>Take 5-Question Diagnostic Quiz</span>
+                <span>Take {subjectConfig.name} Diagnostic Quiz</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>

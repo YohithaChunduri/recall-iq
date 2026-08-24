@@ -8,6 +8,12 @@ export type MetacognitiveCategory =
   | 'FRAGILE_KNOWLEDGE' // Low confidence, Correct answer (Lucky guess)
   | 'SOLID_MASTERY';  // High/Medium confidence, Correct answer
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Concept {
   id: string;
   topicId: string;
@@ -116,6 +122,22 @@ export interface SubjectConfig {
   totalAvailableMinutes: number;
   targetScore: string;
   syllabusCoveredPercentage: number;
+}
+
+export interface SubjectData {
+  id: string;
+  name: string;
+  code: string;
+  examDateText: string;
+  hoursUntilExam: number;
+  totalAvailableMinutes: number;
+  targetScore: string;
+  syllabusCoveredPercentage: number;
+  topics: Topic[];
+  questions: Question[];
+  misconceptions: Misconception[];
+  attempts: UserQuestionAttempt[];
+  targetedRetestQuestions: Record<string, Question[]>;
 }
 
 export interface ProgressSummary {

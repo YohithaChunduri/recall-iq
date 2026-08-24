@@ -5,7 +5,7 @@ import { aiService } from '../../services/aiService';
 import type { Question, ConfidenceLevel } from '../../types';
 
 export const TargetedRetestModal: React.FC = () => {
-  const { activeModal, closeModal, completeTargetedRetest, topics } = useRevision();
+  const { activeModal, closeModal, completeTargetedRetest, topics, currentSubject } = useRevision();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<Record<number, number>>({});
@@ -28,12 +28,12 @@ export const TargetedRetestModal: React.FC = () => {
       setConfidences({});
       setCurrentIndex(0);
 
-      aiService.generateTargetedRetest(conceptId, misconceptionId).then((retestQuestions) => {
+      aiService.generateTargetedRetest(conceptId, currentSubject.targetedRetestQuestions).then((retestQuestions) => {
         setQuestions(retestQuestions);
         setIsLoading(false);
       });
     }
-  }, [activeModal.type, conceptId, misconceptionId]);
+  }, [activeModal.type, conceptId, currentSubject.targetedRetestQuestions]);
 
   if (activeModal.type !== 'retest' || !conceptId) {
     return null;

@@ -9,7 +9,6 @@ import {
   Check,
   HelpCircle
 } from 'lucide-react';
-import { diagnosticQuestionBank } from '../../data/dsaData';
 import { useRevision } from '../../context/RevisionContext';
 import type { ConfidenceLevel, QuestionOption } from '../../types';
 import type { ActivePage } from '../layout/Navbar';
@@ -19,8 +18,7 @@ interface DiagnosticQuizProps {
 }
 
 export const DiagnosticQuiz: React.FC<DiagnosticQuizProps> = ({ onNavigate }) => {
-  const { handleQuestionAnswered } = useRevision();
-  const [questions] = useState(diagnosticQuestionBank);
+  const { questions, handleQuestionAnswered, subjectConfig } = useRevision();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
@@ -28,7 +26,7 @@ export const DiagnosticQuiz: React.FC<DiagnosticQuizProps> = ({ onNavigate }) =>
   const [evaluationResult, setEvaluationResult] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentQ = questions[currentIndex];
+  const currentQ = questions[currentIndex] || questions[0];
 
   const handleSelectOption = (idx: number) => {
     if (isAnswerEvaluated) return;
@@ -44,7 +42,7 @@ export const DiagnosticQuiz: React.FC<DiagnosticQuizProps> = ({ onNavigate }) =>
   };
 
   const handleEvaluateAnswer = async () => {
-    if (selectedOption === null || !confidence || isSubmitting) return;
+    if (!currentQ || selectedOption === null || !confidence || isSubmitting) return;
 
     setIsSubmitting(true);
     const result = await handleQuestionAnswered(currentQ, selectedOption, confidence);
@@ -74,6 +72,22 @@ export const DiagnosticQuiz: React.FC<DiagnosticQuizProps> = ({ onNavigate }) =>
     setEvaluationResult(null);
   };
 
+  if (!currentQ || questions.length === 0) {
+    return (
+      <div className="max-w-xl mx-auto text-center py-12 bg-white rounded-3xl border border-slate-200 p-8 space-y-4">
+        <HelpCircle className="w-12 h-12 mx-auto text-indigo-500" />
+        <h2 className="text-xl font-bold text-slate-900">No Questions Available for {subjectConfig.name}</h2>
+        <p className="text-xs text-slate-500">Upload notes or add syllabus topics to generate adaptive diagnostic questions.</p>
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="px-6 py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow-md"
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-12 animate-fadeIn">
       {/* Quiz Header */}
@@ -81,7 +95,7 @@ export const DiagnosticQuiz: React.FC<DiagnosticQuizProps> = ({ onNavigate }) =>
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 font-bold text-[11px] rounded-full uppercase tracking-wider">
-              Diagnostic Assessment
+              {subjectConfig.name} Diagnostic Assessment
             </span>
             <span className="text-slate-400 text-xs">•</span>
             <span className="text-xs font-semibold text-slate-600">
@@ -125,7 +139,7 @@ export const DiagnosticQuiz: React.FC<DiagnosticQuizProps> = ({ onNavigate }) =>
           </div>
           <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg font-semibold">
             <span>🔥 Exam Recurrence:</span>
-            <span>{currentQ.examFrequencyYears.join(', ')}</span>
+            <span>{currentQ.examFrequencyYears?.join(', ') || '2024'}</span>
           </div>
         </div>
 

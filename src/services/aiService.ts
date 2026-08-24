@@ -6,9 +6,13 @@ import type {
   MetacognitiveCategory,
   Topic
 } from '../types';
-import { targetedRetestQuestions } from '../data/dsaData';
+import { dsaSubjectPreset, dbmsSubjectPreset, osSubjectPreset, cnSubjectPreset } from '../data/subjectPresets';
 
 export interface ConceptExtractionResult {
+  subjectName: string;
+  extractedSyllabusSummary: string;
+  identifiedHotTopics: string[];
+  totalEstimatedMinutes: number;
   topics: {
     name: string;
     description: string;
@@ -22,8 +26,7 @@ export interface ConceptExtractionResult {
       estimatedMinutes: number;
     }[];
   }[];
-  extractedSyllabusSummary: string;
-  identifiedHotTopics: string[];
+  generatedQuestions: Question[];
 }
 
 export interface QuestionEvaluationResult {
@@ -43,7 +46,7 @@ export interface AIServiceProvider {
   extractConceptsFromDocument(
     fileName: string,
     fileType: 'syllabus' | 'notes' | 'pyq',
-    contentPreview?: string
+    currentSubjectName?: string
   ): Promise<ConceptExtractionResult>;
 
   evaluateAnswer(
@@ -62,7 +65,7 @@ export interface AIServiceProvider {
 
   generateTargetedRetest(
     conceptId: string,
-    misconceptionId?: string
+    customRetestsMap?: Record<string, Question[]>
   ): Promise<Question[]>;
 
   generateAdaptiveQuestion(
@@ -79,52 +82,147 @@ class MockAIService implements AIServiceProvider {
   async extractConceptsFromDocument(
     fileName: string,
     _fileType: 'syllabus' | 'notes' | 'pyq',
-    _contentPreview?: string
+    currentSubjectName: string = 'Current Subject'
   ): Promise<ConceptExtractionResult> {
     // Simulate AI model processing time
     await new Promise((res) => setTimeout(res, 900));
 
-    // Default DSA extraction result
+    const lower = currentSubjectName.toLowerCase();
+
+    // Contextual extraction depending on subject name
+    if (lower.includes('dbms') || lower.includes('database')) {
+      return {
+        subjectName: currentSubjectName,
+        extractedSyllabusSummary: `AI analyzed "${fileName}": Extracted 4 core database modules and 6 high-yield sub-concepts, weighted against university previous year papers (PYQs).`,
+        identifiedHotTopics: [
+          '3NF vs BCNF Dependency Preservation (96% exam recurrence)',
+          'Strict 2PL & Cascading Abort Prevention (89% exam recurrence)',
+          'B+ Tree Index Fanout & Leaf Pointers (84% exam recurrence)',
+          'SQL GROUP BY vs HAVING Query Order (78% exam recurrence)'
+        ],
+        totalEstimatedMinutes: 120,
+        topics: dbmsSubjectPreset.topics.map((t) => ({
+          name: t.name,
+          description: `Core exam topic for ${t.name}`,
+          examRelevance: t.examRelevance,
+          concepts: t.concepts.map((c) => ({
+            title: c.title,
+            description: c.description,
+            keyRule: c.keyRule,
+            commonPitfall: c.commonPitfall,
+            examFrequencyWeight: c.examFrequencyWeight,
+            estimatedMinutes: c.estimatedMinutesToRevise
+          }))
+        })),
+        generatedQuestions: dbmsSubjectPreset.questions
+      };
+    }
+
+    if (lower.includes('os') || lower.includes('operating system')) {
+      return {
+        subjectName: currentSubjectName,
+        extractedSyllabusSummary: `AI analyzed "${fileName}": Extracted 3 core Operating Systems modules with emphasis on concurrency invariants and memory management.`,
+        identifiedHotTopics: [
+          'Semaphore wait/signal Ordering & Deadlocks (94% recurrence)',
+          'Banker’s Algorithm Need Matrix & Safe States (88% recurrence)',
+          'Virtual Memory Paging, TLB Hit Rates & LRU (85% recurrence)'
+        ],
+        totalEstimatedMinutes: 120,
+        topics: osSubjectPreset.topics.map((t) => ({
+          name: t.name,
+          description: `Core exam topic for ${t.name}`,
+          examRelevance: t.examRelevance,
+          concepts: t.concepts.map((c) => ({
+            title: c.title,
+            description: c.description,
+            keyRule: c.keyRule,
+            commonPitfall: c.commonPitfall,
+            examFrequencyWeight: c.examFrequencyWeight,
+            estimatedMinutes: c.estimatedMinutesToRevise
+          }))
+        })),
+        generatedQuestions: osSubjectPreset.questions
+      };
+    }
+
+    if (lower.includes('network') || lower.includes('cn')) {
+      return {
+        subjectName: currentSubjectName,
+        extractedSyllabusSummary: `AI analyzed "${fileName}": Extracted 2 core networking modules with focus on transport protocols and IP subnetting calculations.`,
+        identifiedHotTopics: [
+          'TCP 3-Way Handshake & Window Management (92% recurrence)',
+          'CIDR Subnetting & Usable IP Calculation (87% recurrence)'
+        ],
+        totalEstimatedMinutes: 120,
+        topics: cnSubjectPreset.topics.map((t) => ({
+          name: t.name,
+          description: `Core exam topic for ${t.name}`,
+          examRelevance: t.examRelevance,
+          concepts: t.concepts.map((c) => ({
+            title: c.title,
+            description: c.description,
+            keyRule: c.keyRule,
+            commonPitfall: c.commonPitfall,
+            examFrequencyWeight: c.examFrequencyWeight,
+            estimatedMinutes: c.estimatedMinutesToRevise
+          }))
+        })),
+        generatedQuestions: cnSubjectPreset.questions
+      };
+    }
+
+    // Default / DSA / Custom extraction
     return {
-      extractedSyllabusSummary: `Extracted from "${fileName}": Identified 10 core algorithmic patterns across 22 high-yield sub-concepts, weighted by recurrence in university exams and coding interview tests.`,
+      subjectName: currentSubjectName,
+      extractedSyllabusSummary: `AI analyzed "${fileName}" for ${currentSubjectName}: Identified high-yield exam patterns and recurring problem types weighted against previous year questions (PYQs).`,
       identifiedHotTopics: [
-        'Binary Search Monotonicity & Boundary Invariants (95% recurrence)',
-        'Topological Sort & Kahn’s Cycle Detection (88% recurrence)',
-        'Dynamic Sliding Window Condition Maintenance (82% recurrence)',
-        'Lowest Common Ancestor in Binary Trees (79% recurrence)'
+        `Core Invariants & Boundary Constraints in ${currentSubjectName} (95% recurrence)`,
+        `High-Frequency Distractors & Traps in University Exams (89% recurrence)`,
+        `Algorithm & Architecture Complexity Analysis (83% recurrence)`,
+        `System Design & Invariant Invariance (78% recurrence)`
       ],
+      totalEstimatedMinutes: 120,
       topics: [
         {
-          name: 'Binary Search',
-          description: 'Search space reduction, monotonic predicates, lower/upper bounds.',
+          name: `${currentSubjectName} Core Invariants`,
+          description: `Foundational rules and theorems essential for ${currentSubjectName}.`,
           examRelevance: 'CRITICAL',
           concepts: [
             {
-              title: 'Search Space Monotonicity & Sortedness Invariant',
-              description: 'Recognizing when binary search is mathematically valid and why unsorted arrays violate halving guarantees.',
-              keyRule: 'Binary search requires monotonicity in the search range or evaluation predicate.',
-              commonPitfall: 'Applying binary search on unsorted arrays without prior sorting or monotonic reduction.',
+              title: `Search Space & State Monotonicity (${currentSubjectName})`,
+              description: `Understanding preconditions and boundaries in ${currentSubjectName}.`,
+              keyRule: `Always verify that state preconditions are satisfied before applying optimizations.`,
+              commonPitfall: `Applying shortcuts without verifying input constraints.`,
               examFrequencyWeight: 10,
               estimatedMinutes: 25
+            },
+            {
+              title: `Boundary Conditions & Edge Cases`,
+              description: `Preventing off-by-one errors and invalid states in ${currentSubjectName}.`,
+              keyRule: `Explicitly validate edge conditions (empty states, single elements, extreme values).`,
+              commonPitfall: `Assuming standard range inputs only.`,
+              examFrequencyWeight: 9,
+              estimatedMinutes: 15
             }
           ]
         },
         {
-          name: 'Graphs',
-          description: 'Graph representations, traversals, DAG orderings, and shortest paths.',
-          examRelevance: 'CRITICAL',
+          name: `Advanced Optimization & Patterns`,
+          description: `Applied problem-solving and efficiency optimization for ${currentSubjectName}.`,
+          examRelevance: 'HIGH',
           concepts: [
             {
-              title: 'Topological Sort & Cycle Detection (Kahn’s Algorithm)',
-              description: 'In-degree tracking and queue processing for DAG ordering.',
-              keyRule: 'Topological sort is strictly valid only on DAGs.',
-              commonPitfall: 'Attempting to run topological sort on graphs containing cycles.',
-              examFrequencyWeight: 9,
+              title: `Optimized State Transitions & Pruning`,
+              description: `Techniques to minimize computational complexity and overhead.`,
+              keyRule: `Prioritize time-space efficiency and prune redundant subproblems.`,
+              commonPitfall: `Redundant recalculations in recursive branches.`,
+              examFrequencyWeight: 8,
               estimatedMinutes: 20
             }
           ]
         }
-      ]
+      ],
+      generatedQuestions: dsaSubjectPreset.questions
     };
   }
 
@@ -157,7 +255,7 @@ class MockAIService implements AIServiceProvider {
           timestamp: 'Just now',
           isResolved: false,
           underlyingMisconception: selectedOpt?.trapReason || `You had high confidence in an incorrect assumption regarding ${question.conceptName}.`,
-          whyStudentWasConfident: 'This choice is an intuitive surface pattern often confused with standard divide-and-conquer.',
+          whyStudentWasConfident: 'This choice is an intuitive surface pattern often confused with standard behavior under exam pressure.',
           counterExample: question.detailedExplanation,
           clarifiedRule: question.corePrinciple,
           retestQuestionId: `retest-${question.conceptId}`
@@ -181,13 +279,13 @@ class MockAIService implements AIServiceProvider {
       socraticFeedback: {
         verdict: isCorrect
           ? confidence === 'low'
-            ? 'Correct, but your confidence was LOW (Lucky Guess / Fragile Knowledge). Reinforce this algorithmic invariant.'
-            : 'Excellent! Solid algorithmic understanding with well-calibrated confidence.'
+            ? 'Correct, but your confidence was LOW (Lucky Guess / Fragile Knowledge). Reinforce this core concept!'
+            : 'Excellent! Solid understanding with well-calibrated confidence.'
           : confidence === 'high'
-          ? '🚨 HIGH-CONFIDENCE MISCONCEPTION DETECTED! You were sure of this answer, but the underlying algorithmic invariant is flawed.'
+          ? '🚨 HIGH-CONFIDENCE MISCONCEPTION DETECTED! You were sure of this answer, but the underlying concept invariant is flawed.'
           : 'Incorrect (Knowledge Gap). Review the core principle below before your exam.',
         studentThinkingAnalysis: !isCorrect
-          ? selectedOpt?.trapReason || 'You fell into a classic algorithmic distractor trap.'
+          ? selectedOpt?.trapReason || 'You fell into a classic exam distractor trap.'
           : 'You accurately identified the discriminating invariant.',
         correctMentalModel: question.detailedExplanation,
         examTrapWarning: question.corePrinciple
@@ -204,42 +302,52 @@ class MockAIService implements AIServiceProvider {
         reality: misconception.correctAnswerText
       },
       goldenRule: misconception.clarifiedRule,
-      examTip: 'Exam setters frequently include questions checking whether you understand the fundamental preconditions of algorithms like Binary Search!'
+      examTip: `Exam setters frequently include distractor options targeting this exact misconception in ${misconception.topicTitle}!`
     };
   }
 
-  async generateTargetedRetest(conceptId: string, _misconceptionId?: string): Promise<Question[]> {
-    if (targetedRetestQuestions[conceptId]) {
-      return targetedRetestQuestions[conceptId];
+  async generateTargetedRetest(
+    conceptId: string,
+    customRetestsMap?: Record<string, Question[]>
+  ): Promise<Question[]> {
+    if (customRetestsMap && customRetestsMap[conceptId]) {
+      return customRetestsMap[conceptId];
+    }
+    if (dsaSubjectPreset.targetedRetestQuestions[conceptId]) {
+      return dsaSubjectPreset.targetedRetestQuestions[conceptId];
+    }
+    if (dbmsSubjectPreset.targetedRetestQuestions[conceptId]) {
+      return dbmsSubjectPreset.targetedRetestQuestions[conceptId];
     }
 
     return [
       {
         id: `retest-${conceptId}-1`,
-        topicId: 'topic-bs',
+        topicId: 'topic-targeted',
         conceptId: conceptId,
         topicName: 'Targeted Review',
-        conceptName: 'Invariant Verification',
-        prompt: `Targeted Verification: Which statement correctly describes the key algorithmic invariant?`,
+        conceptName: 'Concept Verification Drill',
+        prompt: `Targeted Verification (Question 1 of 2): Which statement correctly describes the essential invariant for this concept?`,
         options: [
           {
             id: 'rt-1',
-            text: 'It strictly checks that the monotonic invariant is satisfied before discarding search ranges.',
+            text: 'It strictly verifies that fundamental boundary conditions and structural invariants are maintained before state changes.',
             isCorrect: true
           },
           {
             id: 'rt-2',
-            text: 'It ignores the sortedness requirement and operates purely on index positions.',
-            isCorrect: false
+            text: 'It ignores structural constraints and operates blindly on raw inputs.',
+            isCorrect: false,
+            trapReason: 'Common misconception'
           },
           {
             id: 'rt-3',
-            text: 'It operates in O(1) time complexity always.',
+            text: 'It always executes in constant O(1) time regardless of input size.',
             isCorrect: false
           },
           {
             id: 'rt-4',
-            text: 'It can only be written iteratively, never recursively.',
+            text: 'None of the above statements are correct.',
             isCorrect: false
           }
         ],
@@ -247,8 +355,44 @@ class MockAIService implements AIServiceProvider {
         difficulty: 'MEDIUM',
         examFrequencyYears: ['2024'],
         detailedExplanation: 'This validates that the mental model was corrected from the initial misconception.',
-        socraticHint: 'Recall the golden algorithmic invariant.',
-        corePrinciple: 'Always verify monotonicity before halving the search space.'
+        socraticHint: 'Recall the golden rule.',
+        corePrinciple: 'Always verify structural constraints before making state changes.'
+      },
+      {
+        id: `retest-${conceptId}-2`,
+        topicId: 'topic-targeted',
+        conceptId: conceptId,
+        topicName: 'Targeted Review',
+        conceptName: 'Edge Case Verification',
+        prompt: `Targeted Verification (Question 2 of 2): How should edge cases be handled under this principle?`,
+        options: [
+          {
+            id: 'rt-2-1',
+            text: 'Explicitly evaluate boundary invariants to prevent runtime exceptions and false states.',
+            isCorrect: true
+          },
+          {
+            id: 'rt-2-2',
+            text: 'Ignore edge cases as they rarely appear in exam questions.',
+            isCorrect: false
+          },
+          {
+            id: 'rt-2-3',
+            text: 'Rely solely on default fallback values.',
+            isCorrect: false
+          },
+          {
+            id: 'rt-2-4',
+            text: 'Restart execution from scratch on every error.',
+            isCorrect: false
+          }
+        ],
+        correctOptionIndex: 0,
+        difficulty: 'MEDIUM',
+        examFrequencyYears: ['2024', '2025'],
+        detailedExplanation: 'Edge case verification ensures robust understanding and prevents exam traps.',
+        socraticHint: 'Consider why boundary testing matters.',
+        corePrinciple: 'Explicitly handle edge cases with defensive validation.'
       }
     ];
   }
@@ -260,7 +404,7 @@ class MockAIService implements AIServiceProvider {
       conceptId: targetConcept.id,
       topicName: topic.name,
       conceptName: targetConcept.title,
-      prompt: `Adaptive Question on ${targetConcept.title}: In standard DSA exam scenarios, which of the following is the required invariant?`,
+      prompt: `Adaptive Question on ${targetConcept.title}: In standard exam scenarios, which of the following is the required invariant?`,
       options: [
         {
           id: 'opt-adapt-1',
@@ -275,12 +419,12 @@ class MockAIService implements AIServiceProvider {
         },
         {
           id: 'opt-adapt-3',
-          text: 'The data structure is emptied immediately.',
+          text: 'State is discarded without verification.',
           isCorrect: false
         },
         {
           id: 'opt-adapt-4',
-          text: 'None of the pointers are updated.',
+          text: 'None of the pointers/references are updated.',
           isCorrect: false
         }
       ],
@@ -309,11 +453,15 @@ class GeminiAIService implements AIServiceProvider {
     return !!this.apiKey;
   }
 
-  async extractConceptsFromDocument(fileName: string, fileType: 'syllabus' | 'notes' | 'pyq', contentPreview?: string): Promise<ConceptExtractionResult> {
+  async extractConceptsFromDocument(
+    fileName: string,
+    fileType: 'syllabus' | 'notes' | 'pyq',
+    currentSubjectName?: string
+  ): Promise<ConceptExtractionResult> {
     if (!this.apiKey) {
-      return new MockAIService().extractConceptsFromDocument(fileName, fileType, contentPreview);
+      return new MockAIService().extractConceptsFromDocument(fileName, fileType, currentSubjectName);
     }
-    return new MockAIService().extractConceptsFromDocument(fileName, fileType, contentPreview);
+    return new MockAIService().extractConceptsFromDocument(fileName, fileType, currentSubjectName);
   }
 
   async evaluateAnswer(question: Question, selectedOptionIndex: number, confidence: ConfidenceLevel): Promise<QuestionEvaluationResult> {
@@ -324,8 +472,8 @@ class GeminiAIService implements AIServiceProvider {
     return new MockAIService().generateSocraticDebunk(misconception);
   }
 
-  async generateTargetedRetest(conceptId: string, misconceptionId?: string): Promise<Question[]> {
-    return new MockAIService().generateTargetedRetest(conceptId, misconceptionId);
+  async generateTargetedRetest(conceptId: string, customRetestsMap?: Record<string, Question[]>): Promise<Question[]> {
+    return new MockAIService().generateTargetedRetest(conceptId, customRetestsMap);
   }
 
   async generateAdaptiveQuestion(topic: Topic, targetConcept: Concept): Promise<Question> {
